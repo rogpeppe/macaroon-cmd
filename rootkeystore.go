@@ -87,7 +87,7 @@ func (s *fileRootKeyStore) RootKey(context.Context) (rootKey, id []byte, err err
 	if err != nil {
 		return nil, nil, errgo.Mask(err)
 	}
-	f, err := os.OpenFile(s.path, os.O_WRONLY|os.O_EXCL|os.O_SYNC, 0600)
+	f, err := os.OpenFile(s.path, os.O_WRONLY|os.O_EXCL|os.O_SYNC|os.O_CREATE, 0600)
 	if err != nil {
 		if !os.IsExist(err) {
 			return nil, nil, errgo.Mask(err)

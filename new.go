@@ -1,6 +1,10 @@
 package main
 
 import (
+	"context"
+	"encoding/base64"
+	"time"
+
 	"github.com/juju/cmd"
 	"github.com/juju/gnuflag"
 	errgo "gopkg.in/errgo.v1"
@@ -8,7 +12,8 @@ import (
 )
 
 type newCommand struct {
-	ops []bakery.Op
+	ops    []bakery.Op
+	expiry time.Duration
 }
 
 func init() {
@@ -26,6 +31,7 @@ func (c *newCommand) Info() *cmd.Info {
 
 func (c *newCommand) SetFlags(f *gnuflag.FlagSet) {
 	// TODO allow specification of root key and id?
+	f.DurationVar(&c.expiry, "expiry", time.Hour, "expiry time of macaroon as a duration")
 }
 
 func (c *newCommand) IsSuperCommand() bool {
@@ -48,6 +54,22 @@ func (c *newCommand) Init(args []string) error {
 	return nil
 }
 
-func (c *newCommand) Run(ctx *cmd.Context) error {
+func (c *newCommand) Run(cmdCtx *cmd.Context) error {
+	oven, err := newOven(cmdCtx)
+	if err != nil {
+		return errgo.Mask(err)
+	}
+	ctx := context.Background()
+	m, err := oven.NewMacaroon(ctx, bakery.Version3, time.Now().Add(c.expiry).Round(time.Millisecond), nil, c.ops...)
+	if err != nil {
+		return errgo.Mask(err)
+	}
+	data, err := m.MarshalJSON()
+	if err != nil {
+		return errgo.Mask(err)
+	}
+	if _, err := cmdCtx.Stdout.Write([]byte(base64.RawStdEncoding.EncodeToString(data) + "\n")); err != nil {
+		return errgo.Notef(err, "cannot write macaroon")
+	}
 	return nil
 }
