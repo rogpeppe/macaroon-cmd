@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
 	"time"
 
 	"github.com/juju/cmd"
@@ -64,12 +63,8 @@ func (c *newCommand) Run(cmdCtx *cmd.Context) error {
 	if err != nil {
 		return errgo.Mask(err)
 	}
-	data, err := m.MarshalJSON()
-	if err != nil {
+	if err := printMacaroon(cmdCtx.Stdout, m); err != nil {
 		return errgo.Mask(err)
-	}
-	if _, err := cmdCtx.Stdout.Write([]byte(base64.RawStdEncoding.EncodeToString(data) + "\n")); err != nil {
-		return errgo.Notef(err, "cannot write macaroon")
 	}
 	return nil
 }

@@ -13,6 +13,7 @@ func main() {
 func main1(args []string) int {
 	c := cmd.NewSuperCommand(cmd.SuperCommandParams{
 		Name: "macaroon",
+		Log:  &cmd.Log{},
 	})
 	for _, subc := range registry {
 		c.Register(subc)
