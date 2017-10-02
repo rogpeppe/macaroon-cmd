@@ -28,57 +28,69 @@ A format argument can be one of the following:
 	rawbinary	- binary encoded
 Binary formats can only be used with bound macaroons.
 
-macaroon new [--expiry duration] op...
-	create new macaroon valid for the given operations,
-	which expires after the given duration from now.
+	macaroon new [--expiry duration] op...
 
-macaroon check [--any] op... [macaroons...]
-	return status indicating whether macaroons are allowed to perform all given
-	operations. If --any flag is given, print allowed status of all operations.
-	All the macaroons should be bound (for example using the use command).
-	e.g. macaroon check read:/usr/bin/x dfvnmdsvflkfdjsnvldksnv dsakhjcsdhjcbsk
+Create new macaroon valid for the given operations,
+which expires after the given duration from now.
 
-macaroon discharge macaroon
-	acquire any discharges needed for the undischarged macaroon
-	and print macaroon slice.
+	macaroon check [--any] op... [macaroons...]
 
-macaroon use [--format format] macaroons
-	use macaroons in a request. Takes the given macaroons, which
-	must have include all discharges, and prints it in the specified
-	format (default binary).
+Return status indicating whether macaroons are allowed to perform all given
+operations. If --any flag is given, print allowed status of all operations.
+All the macaroons should be bound (for example using the use command).
+e.g. macaroon check read:/usr/bin/x dfvnmdsvflkfdjsnvldksnv dsakhjcsdhjcbsk
 
-macaroon caveat [-3 location] [--public-key xxxx] macaroon condition
-	adds caveat to macaroon, prints new macaroon.
-	looks up public key of location if not provided
-	(could use local cache)
+	macaroon discharge macaroon
 
-macaroon show [--format text|json|binary] macaroons
-	shows macaroons formatted with the given
-	format. If --raw is specified, binary output will not be base64-quoted.
+Acquire any discharges needed for the undischarged macaroon
+and print macaroon slice.
+
+	macaroon use [--format format] macaroons
+
+Use macaroons in a request. Takes the given macaroons, which
+must have include all discharges, and prints it in the specified
+format (default binary).
+
+	macaroon caveat [-3 location] [--public-key xxxx] macaroon condition
+
+Add caveat to macaroon, prints new macaroon.
+looks up public key of location if not provided
+(could use local cache)
+
+	macaroon show [--format text|json|binary] macaroons
+
+Show macaroons formatted with the given
+format. If --raw is specified, binary output will not be base64-quoted.
 
 
 UNIMPLEMENTED AS YET
 
-macaroon newkey
-	generate a new public-private key pair and print it.
+	macaroon newkey
+	
+Generate a new public-private key pair and print it.
 
-macaroon login
-	logs into the local macaroon root key server. Prints
-		export ROOTKEY_MACAROON=xxxxxx
-	All commands recognize that env var and use it
-	to talk to the server.
+	macaroon login
+	
+Log into the local macaroon root key server. Prints:
 
-macaroon discharger json-spec
-	run 3rd party caveat discharge service
-	json spec maps caveat conditions to required operations.
-	you can discharge a caveat condition if the caveat condition
-	matches a pattern and the provided discharge token contains
-	a set of macaroons that allows the associated operations.
-		e.g.
-		{
-			condition: "answered-quiz ([a-z]+)",
-			ops: ["answered:\1"],
-		}
+	export ROOTKEY_MACAROON=xxxxx
+
+All commands recognize that env var and use it
+to talk to the server.
+
+	macaroon discharger json-spec
+	
+Run 3rd party caveat discharge service
+json spec maps caveat conditions to required operations.
+you can discharge a caveat condition if the caveat condition
+matches a pattern and the provided discharge token contains
+a set of macaroons that allows the associated operations.
+e.g.
+
+	{
+		condition: "answered-quiz ([a-z]+)",
+		ops: ["answered:\1"],
+	}
 
 Encrypt macaroons at rest; use a server listening on a unix socket
 to retrieve and create root keys. To obtain access to the server,
