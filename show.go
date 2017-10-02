@@ -82,7 +82,7 @@ func (c *showCommand) AllowInterspersedFlags() bool {
 
 // parseEither parses macaroons in either bound or unbound format.
 func parseEither(s string) (bakery.Slice, macaroon.Slice, error) {
-	if strings.HasPrefix(s, "unbound:") {
+	if strings.HasPrefix(s, unboundPrefix) {
 		ms, err := parseUnboundMacaroons(s)
 		if err != nil {
 			return nil, nil, errgo.Mask(err)

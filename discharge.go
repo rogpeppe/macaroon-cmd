@@ -5,6 +5,7 @@ import (
 
 	"github.com/juju/cmd"
 	"github.com/juju/gnuflag"
+	"github.com/juju/persistent-cookiejar"
 	errgo "gopkg.in/errgo.v1"
 	"gopkg.in/macaroon-bakery.v2-unstable/bakery"
 	"gopkg.in/macaroon-bakery.v2-unstable/httpbakery"
@@ -43,7 +44,12 @@ func (c *dischargeCommand) Init(args []string) error {
 
 func (c *dischargeCommand) Run(cmdCtx *cmd.Context) error {
 	ctx := context.Background()
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		return errgo.Notef(err, "cannot make cookiejar")
+	}
 	client := httpbakery.NewClient()
+	client.Client.Jar = jar
 	client.AddInteractor(httpbakery.WebBrowserInteractor{})
 	// TODO use local agent key when available.
 	ms, err := client.DischargeAllUnbound(ctx, c.macaroons)

@@ -19,6 +19,12 @@ var logger = loggo.GetLogger("macaroon-cmd")
 
 const rootKeyFilePath = "/tmp/maca-root-key"
 
+// unboundPrefix is the prefix that unbound macaroons get so we can
+// easily tell the difference even when base-64 encoded. Note that we
+// can't use a colon because then it wouldn't be easy to distinguish
+// between operations and macaroons.
+const unboundPrefix = "unbound%"
+
 func newOven(ctx *cmd.Context) (*bakery.Oven, error) {
 	return bakery.NewOven(bakery.OvenParams{
 		RootKeyStoreForOps: func([]bakery.Op) bakery.RootKeyStore {
@@ -72,14 +78,14 @@ func parseOps(args []string) ([]bakery.Op, error) {
 // - a JSON object in bakery.Macaroon or macaroon.Macaroon format.
 // - a JSON string containing an array of macaroons in bakery.Macaroon format.
 // - a base64-encoded string containing any of the above.
-// - any of the above prefixed with "unbound:".
+// - any of the above prefixed with unboundPrefix.
 //
 // On success, there will always be at least one macaroon
 // in the returned slice.
 func parseUnboundMacaroons(s string) (bakery.Slice, error) {
 	// TODO would it be useful to support a binary-encoded single
 	// macaroon too.
-	s = strings.TrimPrefix(s, "unbound:")
+	s = strings.TrimPrefix(s, unboundPrefix)
 	if s == "" {
 		return nil, errgo.Newf("no macaroons found")
 	}
@@ -87,7 +93,7 @@ func parseUnboundMacaroons(s string) (bakery.Slice, error) {
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
-	if s[0] == '{' {
+	if data[0] == '{' {
 		var m bakery.Macaroon
 		if err := json.Unmarshal(data, &m); err != nil {
 			return nil, errgo.Mask(err)
@@ -219,9 +225,13 @@ func (f formatFlag) marshalUnbound(ms bakery.Slice) ([]byte, error) {
 		panic(errgo.Newf("unknown format %d", f))
 	}
 	if f&formatRaw != 0 {
+		// JSON gets a newline even if is raw.
+		if f&^formatRaw == formatJSON {
+			data = append(data, '\n')
+		}
 		return data, nil
 	}
-	return []byte("unbound:" + base64.RawStdEncoding.EncodeToString(data) + "\n"), nil
+	return []byte(unboundPrefix + base64.RawStdEncoding.EncodeToString(data) + "\n"), nil
 }
 
 func (f formatFlag) marshalBound(ms macaroon.Slice) ([]byte, error) {
