@@ -63,7 +63,7 @@ func (c *newCommand) Run(cmdCtx *cmd.Context) error {
 	if err != nil {
 		return errgo.Mask(err)
 	}
-	if err := printMacaroon(cmdCtx.Stdout, m); err != nil {
+	if err := printUnboundMacaroons(cmdCtx.Stdout, bakery.Slice{m}); err != nil {
 		return errgo.Mask(err)
 	}
 	return nil

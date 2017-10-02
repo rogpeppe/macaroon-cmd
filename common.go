@@ -63,22 +63,47 @@ func parseOps(args []string) ([]bakery.Op, error) {
 	return ops, nil
 }
 
-func parseMacaroon(s string) (*bakery.Macaroon, error) {
+// parseUnboundMacaroons parses a macaroon or macaroons from the given
+// string. The macaroons are expected to be unbound.
+// It accepts:
+// - a JSON string containing a single macaroon.
+// - a JSON string containing an array of macaroons.
+// - a base64-encoded string containing either of the above.
+// - any of the above prefixed with "unbound:".
+//
+// On success, there will always be at least one macaroon
+// in the returned slice.
+func parseUnboundMacaroons(s string) (bakery.Slice, error) {
+	s = strings.TrimPrefix(s, "unbound:")
+	if s == "" {
+		return nil, errgo.Newf("no macaroons found")
+	}
 	var data []byte
-	if strings.HasPrefix(s, "{") {
-		data = []byte(s)
-	} else {
+	if s[0] != '[' && s[0] != '{' {
+		// It's base64-encoded.
 		data1, err := macaroon.Base64Decode([]byte(s))
 		if err != nil {
-			return nil, errgo.Mask(err)
+			return nil, errgo.Notef(err, "invalid base64-encoding of macaroon")
 		}
 		data = data1
+	} else {
+		data = []byte(s)
 	}
-	var m bakery.Macaroon
-	if err := json.Unmarshal(data, &m); err != nil {
+	if s[0] == '{' {
+		var m bakery.Macaroon
+		if err := json.Unmarshal(data, &m); err != nil {
+			return nil, errgo.Mask(err)
+		}
+		return bakery.Slice{&m}, nil
+	}
+	var ms bakery.Slice
+	if err := json.Unmarshal(data, &ms); err != nil {
 		return nil, errgo.Mask(err)
 	}
-	return &m, nil
+	if len(ms) == 0 {
+		return nil, errgo.Newf("empty macaroon array")
+	}
+	return ms, nil
 }
 
 func randomBytes(n int) ([]byte, error) {
@@ -90,12 +115,16 @@ func randomBytes(n int) ([]byte, error) {
 	return b, nil
 }
 
-func printMacaroon(w io.Writer, m *bakery.Macaroon) error {
-	data, err := m.MarshalJSON()
+func printUnboundMacaroons(w io.Writer, ms bakery.Slice) error {
+	var x interface{} = ms
+	if len(ms) == 1 {
+		x = ms[0]
+	}
+	data, err := json.Marshal(x)
 	if err != nil {
 		return errgo.Mask(err)
 	}
-	if _, err := w.Write([]byte(base64.RawStdEncoding.EncodeToString(data) + "\n")); err != nil {
+	if _, err := w.Write([]byte("unbound:" + base64.RawStdEncoding.EncodeToString(data) + "\n")); err != nil {
 		return errgo.Notef(err, "cannot write macaroon")
 	}
 	return nil

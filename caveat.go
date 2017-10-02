@@ -17,7 +17,7 @@ var logger = loggo.GetLogger("cmd/macaroon")
 type caveatCommand struct {
 	location  string
 	publicKey publicKeyFlag
-	macaroon  *bakery.Macaroon
+	macaroons bakery.Slice
 	insecure  bool
 	condition string
 	version   bakery.Version
@@ -30,7 +30,7 @@ func init() {
 func (c *caveatCommand) Info() *cmd.Info {
 	return &cmd.Info{
 		Name:    "caveat",
-		Args:    "macaroon condition",
+		Args:    "macaroons condition",
 		Purpose: "Add a caveat to a macaroon",
 		Doc:     `doc TODO`,
 	}
@@ -57,11 +57,11 @@ func (c *caveatCommand) Init(args []string) error {
 	if len(args) != 2 {
 		return errgo.New("need macaroon and condition arguments")
 	}
-	m, err := parseMacaroon(args[0])
+	ms, err := parseUnboundMacaroons(args[0])
 	if err != nil {
 		return errgo.Mask(err)
 	}
-	c.macaroon = m
+	c.macaroons = ms
 	c.condition = args[1]
 	return nil
 }
@@ -98,10 +98,10 @@ func (c *caveatCommand) Run(cmdCtx *cmd.Context) error {
 		key = key1
 	}
 	logger.Warningf("adding caveat %#v", cav)
-	if err := c.macaroon.AddCaveat(ctx, cav, key, loc); err != nil {
+	if err := c.macaroons[0].AddCaveat(ctx, cav, key, loc); err != nil {
 		return errgo.Mask(err)
 	}
-	if err := printMacaroon(cmdCtx.Stdout, c.macaroon); err != nil {
+	if err := printUnboundMacaroons(cmdCtx.Stdout, c.macaroons); err != nil {
 		return errgo.Mask(err)
 	}
 	return nil
