@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"github.com/juju/loggo"
 
 	"github.com/juju/cmd"
 	"github.com/juju/gnuflag"
@@ -11,8 +10,6 @@ import (
 	"gopkg.in/macaroon-bakery.v2-unstable/bakery/checkers"
 	"gopkg.in/macaroon-bakery.v2-unstable/httpbakery"
 )
-
-var logger = loggo.GetLogger("cmd/macaroon")
 
 type caveatCommand struct {
 	location  string
@@ -72,7 +69,6 @@ func (c *caveatCommand) Run(cmdCtx *cmd.Context) error {
 		Condition: c.condition,
 		Location:  c.location,
 	}
-	logger.Warningf("location %q", c.location)
 	var key *bakery.KeyPair
 	var loc bakery.ThirdPartyLocator
 	if cav.Location != "" {
@@ -89,7 +85,6 @@ func (c *caveatCommand) Run(cmdCtx *cmd.Context) error {
 				Version:   c.version,
 			})
 			loc = loc1
-			logger.Warningf("local locator: %#v", loc1)
 		}
 		key1, err := bakery.GenerateKey()
 		if err != nil {
@@ -97,12 +92,13 @@ func (c *caveatCommand) Run(cmdCtx *cmd.Context) error {
 		}
 		key = key1
 	}
-	logger.Warningf("adding caveat %#v", cav)
 	if err := c.macaroons[0].AddCaveat(ctx, cav, key, loc); err != nil {
 		return errgo.Mask(err)
 	}
-	if err := printUnboundMacaroons(cmdCtx.Stdout, c.macaroons); err != nil {
+	data, err := formatJSON.marshalUnbound(c.macaroons)
+	if err != nil {
 		return errgo.Mask(err)
 	}
+	cmdCtx.Stdout.Write(data)
 	return nil
 }

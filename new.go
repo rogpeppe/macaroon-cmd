@@ -63,8 +63,10 @@ func (c *newCommand) Run(cmdCtx *cmd.Context) error {
 	if err != nil {
 		return errgo.Mask(err)
 	}
-	if err := printUnboundMacaroons(cmdCtx.Stdout, bakery.Slice{m}); err != nil {
+	data, err := formatJSON.marshalUnbound(bakery.Slice{m})
+	if err != nil {
 		return errgo.Mask(err)
 	}
+	cmdCtx.Stdout.Write(data)
 	return nil
 }

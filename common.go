@@ -5,15 +5,17 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/juju/cmd"
+	"github.com/juju/loggo"
 	errgo "gopkg.in/errgo.v1"
 	"gopkg.in/macaroon-bakery.v2-unstable/bakery"
 	"gopkg.in/macaroon-bakery.v2-unstable/httpbakery"
 	"gopkg.in/macaroon.v2-unstable"
 )
+
+var logger = loggo.GetLogger("macaroon-cmd")
 
 const rootKeyFilePath = "/tmp/maca-root-key"
 
@@ -66,14 +68,16 @@ func parseOps(args []string) ([]bakery.Op, error) {
 // parseUnboundMacaroons parses a macaroon or macaroons from the given
 // string. The macaroons are expected to be unbound.
 // It accepts:
-// - a JSON string containing a single macaroon.
-// - a JSON string containing an array of macaroons.
-// - a base64-encoded string containing either of the above.
+// - a JSON string containing a object in bakery.Macaroon or macaroon.Macaroon format.
+// - a JSON string containing an array of macaroons in bakery.Macaroon format.
+// - a base64-encoded string containing any of the above.
 // - any of the above prefixed with "unbound:".
 //
 // On success, there will always be at least one macaroon
 // in the returned slice.
 func parseUnboundMacaroons(s string) (bakery.Slice, error) {
+	// TODO would it be useful to support a binary-encoded single
+	// macaroon too.
 	s = strings.TrimPrefix(s, "unbound:")
 	if s == "" {
 		return nil, errgo.Newf("no macaroons found")
@@ -103,6 +107,11 @@ func parseUnboundMacaroons(s string) (bakery.Slice, error) {
 	if len(ms) == 0 {
 		return nil, errgo.Newf("empty macaroon array")
 	}
+	for _, m := range ms {
+		if m.Version() < bakery.Version3 {
+			return nil, errgo.Newf("array of bound macaroons is not allowed (got version %d, want %d)", m.Version(), bakery.Version3)
+		}
+	}
 	return ms, nil
 }
 
@@ -113,21 +122,6 @@ func randomBytes(n int) ([]byte, error) {
 		return nil, fmt.Errorf("cannot generate %d random bytes: %v", n, err)
 	}
 	return b, nil
-}
-
-func printUnboundMacaroons(w io.Writer, ms bakery.Slice) error {
-	var x interface{} = ms
-	if len(ms) == 1 {
-		x = ms[0]
-	}
-	data, err := json.Marshal(x)
-	if err != nil {
-		return errgo.Mask(err)
-	}
-	if _, err := w.Write([]byte("unbound:" + base64.RawStdEncoding.EncodeToString(data) + "\n")); err != nil {
-		return errgo.Notef(err, "cannot write macaroon")
-	}
-	return nil
 }
 
 type publicKeyFlag struct {
@@ -152,4 +146,91 @@ func (f *publicKeyFlag) Set(s string) error {
 	}
 	f.key = &k
 	return nil
+}
+
+const (
+	formatJSON formatFlag = iota
+	formatBinary
+
+	formatRaw formatFlag = 1 << 3
+)
+
+type formatFlag int
+
+func (f formatFlag) String() string {
+	s := ""
+	switch f &^ formatRaw {
+	case formatJSON:
+		s = "json"
+	case formatBinary:
+		s = "binary"
+	default:
+		s = "unknown"
+	}
+	if f&formatRaw != 0 {
+		s = "raw" + s
+	}
+	return s
+}
+
+func (f *formatFlag) Set(s string) error {
+	var fv formatFlag
+	s1 := strings.TrimPrefix(s, "raw")
+	if len(s1) != len(s) {
+		fv |= formatRaw
+	}
+	switch s1 {
+	case "json":
+		fv |= formatJSON
+	case "binary":
+		fv |= formatBinary
+	default:
+		return errgo.Newf("unrecognized format %q", s)
+	}
+	*f = fv
+	return nil
+}
+
+func (f formatFlag) marshalUnbound(ms bakery.Slice) ([]byte, error) {
+	var data []byte
+	switch f &^ formatRaw {
+	case formatJSON:
+		var err error
+		data, err = json.Marshal(ms)
+		if err != nil {
+			return nil, errgo.Mask(err)
+		}
+	case formatBinary:
+		return nil, errgo.Newf("cannot format unbound macaroons in binary format")
+	default:
+		panic(errgo.Newf("unknown format %d", f))
+	}
+	if f&formatRaw != 0 {
+		return data, nil
+	}
+	return []byte("unbound:" + base64.RawStdEncoding.EncodeToString(data) + "\n"), nil
+}
+
+func (f formatFlag) marshalBound(ms macaroon.Slice) ([]byte, error) {
+	var data []byte
+	switch f &^ formatRaw {
+	case formatJSON:
+		var err error
+		data, err = json.Marshal(ms)
+		if err != nil {
+			return nil, errgo.Mask(err)
+		}
+	case formatBinary:
+		var err error
+		data, err = ms.MarshalBinary()
+		if err != nil {
+			return nil, errgo.Mask(err)
+		}
+	default:
+		panic(errgo.Newf("unknown format %d", f))
+	}
+	if f&formatRaw != 0 {
+		return data, nil
+	}
+	return []byte(base64.RawStdEncoding.EncodeToString(data) + "\n"), nil
 }
