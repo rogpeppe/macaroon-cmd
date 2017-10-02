@@ -67,8 +67,9 @@ func parseOps(args []string) ([]bakery.Op, error) {
 
 // parseUnboundMacaroons parses a macaroon or macaroons from the given
 // string. The macaroons are expected to be unbound.
-// It accepts:
-// - a JSON string containing a object in bakery.Macaroon or macaroon.Macaroon format.
+//
+// It accepts one of:
+// - a JSON object in bakery.Macaroon or macaroon.Macaroon format.
 // - a JSON string containing an array of macaroons in bakery.Macaroon format.
 // - a base64-encoded string containing any of the above.
 // - any of the above prefixed with "unbound:".
@@ -82,16 +83,9 @@ func parseUnboundMacaroons(s string) (bakery.Slice, error) {
 	if s == "" {
 		return nil, errgo.Newf("no macaroons found")
 	}
-	var data []byte
-	if s[0] != '[' && s[0] != '{' {
-		// It's base64-encoded.
-		data1, err := macaroon.Base64Decode([]byte(s))
-		if err != nil {
-			return nil, errgo.Notef(err, "invalid base64-encoding of macaroon")
-		}
-		data = data1
-	} else {
-		data = []byte(s)
+	data, err := maybeBase64Decode(s)
+	if err != nil {
+		return nil, errgo.Mask(err)
 	}
 	if s[0] == '{' {
 		var m bakery.Macaroon
@@ -113,6 +107,20 @@ func parseUnboundMacaroons(s string) (bakery.Slice, error) {
 		}
 	}
 	return ms, nil
+}
+
+// maybeBase64Decode decodes s as base64 if it doesn't look
+// like a JSON object.
+func maybeBase64Decode(s string) ([]byte, error) {
+	if len(s) > 0 && (s[0] == '[' || s[0] == '{') {
+		return []byte(s), nil
+	}
+	// It's base64-encoded.
+	data, err := macaroon.Base64Decode([]byte(s))
+	if err != nil {
+		return nil, errgo.Notef(err, "invalid base64-encoding of macaroon")
+	}
+	return data, nil
 }
 
 func randomBytes(n int) ([]byte, error) {
@@ -196,7 +204,12 @@ func (f formatFlag) marshalUnbound(ms bakery.Slice) ([]byte, error) {
 	switch f &^ formatRaw {
 	case formatJSON:
 		var err error
-		data, err = json.Marshal(ms)
+		if len(ms) == 1 {
+			// A slice with a single element formats as that element.
+			data, err = json.Marshal(ms[0])
+		} else {
+			data, err = json.Marshal(ms)
+		}
 		if err != nil {
 			return nil, errgo.Mask(err)
 		}
