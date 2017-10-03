@@ -44,6 +44,15 @@ A format argument can be one of the following:
 	rawbinary	- binary encoded
 Binary formats can only be used with bound macaroons.
 
+	macaroon login
+	
+Log into the local macaroon root key server. Prints:
+
+	export MACAROON_ACCESS_TOKEN=xxxxx
+
+All commands recognize that env var and use it
+to talk to the server.
+
 	macaroon new [--expiry duration] op...
 
 Create new macaroon valid for the given operations,
@@ -85,14 +94,6 @@ UNIMPLEMENTED AS YET
 	
 Generate a new public-private key pair and print it.
 
-	macaroon login
-	
-Log into the local macaroon root key server. Prints:
-
-	export ROOTKEY_MACAROON=xxxxx
-
-All commands recognize that env var and use it
-to talk to the server.
 
 	macaroon discharger json-spec
 	
