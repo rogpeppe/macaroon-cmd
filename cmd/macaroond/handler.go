@@ -7,8 +7,8 @@ import (
 
 	"github.com/juju/httprequest"
 	errgo "gopkg.in/errgo.v1"
-	"gopkg.in/macaroon-bakery.v2-unstable/httpbakery"
 	"gopkg.in/macaroon-bakery.v2-unstable/bakery"
+	"gopkg.in/macaroon-bakery.v2-unstable/httpbakery"
 
 	"github.com/rogpeppe/macaroon-cmd/internal/params"
 )
@@ -29,7 +29,12 @@ var accessOp = bakery.Op{
 }
 
 func (srv *server) newHandler(p httprequest.Params, req interface{}) (*handler, error) {
-	if _, ok := req.(*params.AccessRequest); !ok {
+	switch req.(type) {
+	case *params.AccessRequest,
+		*params.SetPasswordRequest:
+		// Both these requests check the password held in the request.
+	default:
+		// All other requests require the access token.
 		_, err := srv.bakery.Checker.Auth(httpbakery.RequestMacaroons(p.Request)...).Allow(p.Context, accessOp)
 		if err != nil {
 			return nil, errgo.Mask(err)
@@ -76,11 +81,7 @@ func (h *handler) Access(p httprequest.Params, req *params.AccessRequest) (*para
 	if h.srv.needsPassword() {
 		return nil, errgo.WithCausef(nil, params.ErrInitialPasswordNeeded, "")
 	}
-	user, password, ok := p.Request.BasicAuth()
-	if !ok || user != "admin" {
-		return nil, errgo.WithCausef(nil, params.ErrUnauthorized, "")
-	}
-	if err := h.srv.checkPassword(password); err != nil {
+	if err := h.srv.checkPassword(req.Password); err != nil {
 		return nil, errgo.WithCausef(err, params.ErrUnauthorized, "")
 	}
 	m, err := h.srv.bakery.Oven.NewMacaroon(p.Context, httpbakery.RequestVersion(p.Request), time.Now().Add(expiryDuration), nil, accessOp)

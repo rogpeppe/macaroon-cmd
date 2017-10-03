@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/julienschmidt/httprouter"
 	"github.com/juju/loggo"
+	"github.com/julienschmidt/httprouter"
 	errgo "gopkg.in/errgo.v1"
 	"gopkg.in/macaroon-bakery.v2-unstable/bakery"
 )

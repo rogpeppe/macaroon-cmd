@@ -24,7 +24,8 @@ type NewRootKeyResponse struct {
 }
 
 type AccessRequest struct {
-	httprequest.Route `httprequest:"GET /macaroon"`
+	httprequest.Route `httprequest:"POST /macaroon"`
+	Password          string `httprequest:"password,form"`
 }
 
 type AccessResponse struct {
@@ -33,7 +34,6 @@ type AccessResponse struct {
 
 type SetPasswordRequest struct {
 	httprequest.Route `httprequest:"PUT /password"`
-	OldPassword string	`json:"oldPassword,form"`
-	NewPassword string	`json:"newPassword,form"`
+	OldPassword       string `json:"oldPassword,form"`
+	NewPassword       string `json:"newPassword,form"`
 }
-

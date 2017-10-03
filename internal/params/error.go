@@ -17,10 +17,10 @@ func (code ErrorCode) ErrorCode() ErrorCode {
 }
 
 const (
-	ErrNotFound         ErrorCode = "not found"
+	ErrNotFound              ErrorCode = "not found"
 	ErrInitialPasswordNeeded ErrorCode = "initial password needed"
-	ErrBadRequest       ErrorCode = "bad request"
-	ErrUnauthorized     ErrorCode = "unauthorized"
+	ErrBadRequest            ErrorCode = "bad request"
+	ErrUnauthorized          ErrorCode = "unauthorized"
 )
 
 // Error represents an error - it is returned for any response that fails.
@@ -55,4 +55,3 @@ func (e *Error) Cause() error {
 	}
 	return nil
 }
-
