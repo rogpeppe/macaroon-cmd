@@ -17,22 +17,22 @@ import (
 var logger = loggo.GetLogger("macaroond")
 
 var (
-	netType = flag.String("t", "unix", "type of network to listen on (e.g. tcp)")
+	netTypeFlag = flag.String("t", "unix", "type of network to listen on (e.g. tcp)")
+	addrFlag    = flag.String("addr", "/tmp/macaroond.socket", "address or socket path to listen on")
 )
 
 func main() {
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "usage: macaroond [flags] addr directory\n")
+		fmt.Fprintf(os.Stderr, "usage: macaroond [flags] directory\n")
 		flag.PrintDefaults()
 		os.Exit(2)
 	}
 	flag.Parse()
-	if flag.NArg() != 2 {
+	if flag.NArg() != 1 {
 		flag.Usage()
 	}
-	addr := flag.Arg(0)
-	dir := flag.Arg(1)
-	if err := main1(*netType, addr, dir); err != nil {
+	dir := flag.Arg(0)
+	if err := main1(*netTypeFlag, *addrFlag, dir); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -42,10 +42,10 @@ func main1(netw string, addr string, dir string) error {
 		// TODO create directory?
 		return errgo.Mask(err)
 	}
-	listener, err := net.Listen(*netType, addr)
+	listener, err := net.Listen(netw, addr)
 	if err != nil {
 		// TODO remove unix socket if it exists and try again
-		return errgo.Notef(err, "cannot listen on network %q, addr %q", *netType, addr)
+		return errgo.Notef(err, "cannot listen on network %q, addr %q", netw, addr)
 	}
 	srv := &server{
 		dir: dir,

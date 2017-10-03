@@ -2,7 +2,21 @@ macaroon command
 -------
 
 This command implements command-line support for creating, discharging
-and checking macaroons.
+and checking macaroons. It will usually rely on a macaroond daemon running
+somewhere in the system. Use `macaroon login` to acquire an access token
+to use this. The first time this runs, it will prompt for a password to use
+to encrypt the root keys. The login command prints an environment variable
+to set which provides access to the root key store.
+
+To run macaroond, first install it (`go get github.com/rogpeppe/macaroon-cmd/cmd/macaroond`)
+then run it as:
+
+	macaroond /tmp/macaroonstoragedir
+
+You can also run the macaroon command storing the root keys unencrypted in
+a local file with:
+
+	export MACAROON_ACCESS_TOKEN=localfile:/path/to/storage-directory
 
 A "macaroons" argument to a command specifies a list of unbound macaroons,
 with the first element being the primary, or root, macaroon and the rest

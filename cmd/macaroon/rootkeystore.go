@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/base64"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 	"sync"
@@ -29,7 +28,6 @@ func newRootKeyStore() (bakery.RootKeyStore, error) {
 		return nil, errNoAccessToken
 	}
 	if path := strings.TrimPrefix(tok, "localfile:"); len(path) != len(tok) {
-		log.Printf("new file rootkeystore at %q", path)
 		return newFileRootKeyStore(path), nil
 	}
 	ms, err := parseUnboundMacaroons(tok)
@@ -42,7 +40,6 @@ func newRootKeyStore() (bakery.RootKeyStore, error) {
 		return nil, errgo.Notef(err, "access token location %q in incorrect format", macLoc)
 	}
 	netw, addr := loc[0], loc[1]
-	log.Printf("new root key store at %s!%s", netw, addr)
 	// TODO discharge macaroons, as someone may have added 3rd party caveats to them.
 	return macaroondclient.New(netw, addr, ms.Bind()), nil
 }
