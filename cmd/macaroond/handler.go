@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"sync"
 	"time"
+	"context"
 
 	"github.com/juju/httprequest"
 	errgo "gopkg.in/errgo.v1"
 	"gopkg.in/macaroon-bakery.v2-unstable/bakery"
 	"gopkg.in/macaroon-bakery.v2-unstable/httpbakery"
 
-	"github.com/rogpeppe/macaroon-cmd/internal/params"
+	"github.com/rogpeppe/macaroon-cmd/params"
 )
 
 var rootKeyId = []byte("0")
@@ -28,7 +29,7 @@ var accessOp = bakery.Op{
 	Action: "access",
 }
 
-func (srv *server) newHandler(p httprequest.Params, req interface{}) (*handler, error) {
+func (srv *server) newHandler(p httprequest.Params, req interface{}) (*handler, context.Context, error) {
 	switch req.(type) {
 	case *params.AccessRequest,
 		*params.SetPasswordRequest:
@@ -37,12 +38,12 @@ func (srv *server) newHandler(p httprequest.Params, req interface{}) (*handler, 
 		// All other requests require the access token.
 		_, err := srv.bakery.Checker.Auth(httpbakery.RequestMacaroons(p.Request)...).Allow(p.Context, accessOp)
 		if err != nil {
-			return nil, errgo.Mask(err)
+			return nil, nil, errgo.Mask(err)
 		}
 	}
 	return &handler{
 		srv: srv,
-	}, nil
+	}, p.Context, nil
 }
 
 func (h *handler) SetPassword(req *params.SetPasswordRequest) error {

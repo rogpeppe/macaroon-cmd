@@ -25,7 +25,7 @@ func decrypt(data []byte, password string) ([]byte, error) {
 	copy(nonce[:], data)
 	plain, ok := secretbox.Open(nil, data[len(nonce):], &nonce, &key)
 	if !ok {
-		return nil, errgo.Newf("bad password")
+		return nil, errgo.Newf("bad password %q", password)
 	}
 	return plain, nil
 }

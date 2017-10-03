@@ -34,6 +34,6 @@ type AccessResponse struct {
 
 type SetPasswordRequest struct {
 	httprequest.Route `httprequest:"PUT /password"`
-	OldPassword       string `json:"oldPassword,form"`
-	NewPassword       string `json:"newPassword,form"`
+	OldPassword       string `httprequest:"oldPassword,form"`
+	NewPassword       string `httprequest:"newPassword,form"`
 }

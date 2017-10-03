@@ -11,9 +11,27 @@ import (
 	errgo "gopkg.in/errgo.v1"
 	"gopkg.in/macaroon-bakery.v2-unstable/bakery"
 	macaroon "gopkg.in/macaroon.v2-unstable"
+	
+	"github.com/rogpeppe/macaroon-cmd/cmd/macaroond/macaroondclient"
 )
 
 var _ bakery.RootKeyStore = (*fileRootKeyStore)(nil)
+
+func newRootKeyStore(netw, addr string) (bakery.RootKeyStore, error) {
+	if netw == "file" {
+		return newFileRootKeyStore(addr), nil
+	}
+	tok := os.Getenv("MACAROON_ACCESS_TOKEN")
+	if tok == "" {
+		return nil, errgo.Newf(`no macaroon access token found - use "macaroon login" to obtain one`)
+	}
+	ms, err := parseUnboundMacaroons(tok)
+	if err != nil {
+		return nil, errgo.Notef(err, "invalid macaroon access token")
+	}
+	// TODO discharge macaroons, as someone may have added 3rd party caveats to them.
+	return macaroondclient.New(netw, addr, ms.Bind()), nil
+}
 
 // newFileRootKeyStore returns an implementation of
 // Store that stores a single key inside a path with
