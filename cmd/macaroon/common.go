@@ -17,8 +17,6 @@ import (
 
 var logger = loggo.GetLogger("macaroon-cmd")
 
-const rootKeyFilePath = "/tmp/maca-root-key"
-
 // unboundPrefix is the prefix that unbound macaroons get so we can
 // easily tell the difference even when base-64 encoded. Note that we
 // can't use a colon because then it wouldn't be easy to distinguish
@@ -26,10 +24,13 @@ const rootKeyFilePath = "/tmp/maca-root-key"
 const unboundPrefix = "unbound%"
 
 func newOven(ctx *cmd.Context) (*bakery.Oven, error) {
+	rks, err := newRootKeyStore()
+	if err != nil {
+		return nil, errgo.Mask(err)
+	}
 	return bakery.NewOven(bakery.OvenParams{
 		RootKeyStoreForOps: func([]bakery.Op) bakery.RootKeyStore {
-			// TODO use connection to server etc.
-			return newFileRootKeyStore(rootKeyFilePath)
+			return rks
 		},
 		// TODO Namespace
 		// TODO OpsStore - store the ops in the server too

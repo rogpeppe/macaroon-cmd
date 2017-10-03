@@ -5,30 +5,44 @@ import (
 	"context"
 	"encoding/base64"
 	"io/ioutil"
+	"log"
 	"os"
+	"strings"
 	"sync"
 
 	errgo "gopkg.in/errgo.v1"
 	"gopkg.in/macaroon-bakery.v2-unstable/bakery"
 	macaroon "gopkg.in/macaroon.v2-unstable"
-	
+
 	"github.com/rogpeppe/macaroon-cmd/cmd/macaroond/macaroondclient"
 )
 
+var errNoAccessToken = errgo.Newf(`no macaroon access token found - use "macaroon login" to obtain one`)
+
 var _ bakery.RootKeyStore = (*fileRootKeyStore)(nil)
 
-func newRootKeyStore(netw, addr string) (bakery.RootKeyStore, error) {
-	if netw == "file" {
-		return newFileRootKeyStore(addr), nil
-	}
-	tok := os.Getenv("MACAROON_ACCESS_TOKEN")
+const envToken = "MACAROON_ACCESS_TOKEN"
+
+func newRootKeyStore() (bakery.RootKeyStore, error) {
+	tok := os.Getenv(envToken)
 	if tok == "" {
-		return nil, errgo.Newf(`no macaroon access token found - use "macaroon login" to obtain one`)
+		return nil, errNoAccessToken
+	}
+	if path := strings.TrimPrefix(tok, "localfile:"); len(path) != len(tok) {
+		log.Printf("new file rootkeystore at %q", path)
+		return newFileRootKeyStore(path), nil
 	}
 	ms, err := parseUnboundMacaroons(tok)
 	if err != nil {
 		return nil, errgo.Notef(err, "invalid macaroon access token")
 	}
+	macLoc := ms[0].M().Location()
+	loc := strings.SplitN(macLoc, " ", 2)
+	if len(loc) != 2 {
+		return nil, errgo.Notef(err, "access token location %q in incorrect format", macLoc)
+	}
+	netw, addr := loc[0], loc[1]
+	log.Printf("new root key store at %s!%s", netw, addr)
 	// TODO discharge macaroons, as someone may have added 3rd party caveats to them.
 	return macaroondclient.New(netw, addr, ms.Bind()), nil
 }

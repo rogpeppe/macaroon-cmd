@@ -2,9 +2,9 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"sync"
 	"time"
-	"context"
 
 	"github.com/juju/httprequest"
 	errgo "gopkg.in/errgo.v1"

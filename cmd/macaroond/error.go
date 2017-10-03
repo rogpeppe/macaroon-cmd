@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"net/http"
 
 	"github.com/juju/httprequest"
@@ -16,7 +17,7 @@ type errorCoder interface {
 }
 
 func errorToResponse(ctx context.Context, err error) (int, interface{}) {
-	logger.Infof("HTTP error response: %#v", err)
+	log.Printf("HTTP error response: %#v", err)
 	// Allow bakery errors to be returned as the bakery would
 	// like them, so that httpbakery.Client.Do will work.
 	if err, ok := errgo.Cause(err).(*httpbakery.Error); ok {

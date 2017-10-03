@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
-	"log"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -77,7 +76,6 @@ func (srv *server) setPassword(oldPassword, newPassword string) error {
 }
 
 func (srv *server) setPassword0(oldPassword, newPassword string) error {
-	log.Printf("changing password from %q to %q", oldPassword, newPassword)
 	encryptedMasterKey := srv.encryptedMasterKey
 	if encryptedMasterKey == nil {
 		// We don't have a key, so generate one.
@@ -91,13 +89,11 @@ func (srv *server) setPassword0(oldPassword, newPassword string) error {
 	if err != nil {
 		return errgo.Mask(err)
 	}
-	log.Printf("re-encrypting with new password %q", newPassword)
 	// Re-encrypt with new password and write it.
 	encryptedMasterKey = encrypt(masterKey, newPassword)
 	if err := srv.writeEncryptedKey(encryptedMasterKey); err == nil {
 		srv.masterKey = masterKey
 		srv.encryptedMasterKey = encryptedMasterKey
-		log.Printf("encrypted master key now %x", srv.encryptedMasterKey)
 		return nil
 	}
 	if !os.IsExist(errgo.Cause(err)) {

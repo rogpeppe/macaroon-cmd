@@ -4,4 +4,3 @@ var (
 	Encrypt = encrypt
 	Decrypt = decrypt
 )
-

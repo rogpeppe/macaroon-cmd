@@ -1,8 +1,9 @@
 package main
+
 import (
+	"encoding/base64"
 	qt "github.com/frankban/quicktest"
 	"testing"
-	"encoding/base64"
 )
 
 func TestEncryptDecrypt(t *testing.T) {
