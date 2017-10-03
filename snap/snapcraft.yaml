@@ -1,0 +1,25 @@
+{
+        "apps": {
+                "macaroond": {
+                        "command": "bin/macaroond",
+                        "daemon": "simple",
+                        "plugs": ["network-bind"]
+              },
+                "macaroon": {
+                        "command": "bin/macaroon",
+                        "plugs": ["network"]
+                }
+       },
+        "architectures": ["amd64"],
+        "confinement": "strict",
+        "description": "Bake macaroons on the command line!",
+        "name": "macaroon",
+        "parts": {
+                "server": {
+                        "plugin": "make",
+                        "source": "."
+                }
+        },
+        "summary": "Bake macaroons on the command line!",
+        "version": 1
+}
