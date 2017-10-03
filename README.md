@@ -1,6 +1,8 @@
 macaroon command
 -------
 
+Note: *WORK IN PROGRESS*
+
 This command implements command-line support for creating, discharging
 and checking macaroons. It will usually rely on a macaroond daemon running
 somewhere in the system. Use `macaroon login` to acquire an access token
