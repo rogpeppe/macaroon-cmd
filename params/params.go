@@ -5,6 +5,11 @@ import (
 	"gopkg.in/macaroon-bakery.v2-unstable/bakery"
 )
 
+const (
+	DefaultNetwork = "tcp"
+	DefaultAddress = "localhost:46753"
+)
+
 type FindRootKeyRequest struct {
 	httprequest.Route `httprequest:"GET /key/:Id"`
 	Id                string `httprequest:",path"`

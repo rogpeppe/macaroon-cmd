@@ -10,6 +10,7 @@ import (
 
 	"github.com/juju/loggo"
 	"github.com/julienschmidt/httprouter"
+	"github.com/rogpeppe/macaroon-cmd/params"
 	errgo "gopkg.in/errgo.v1"
 	"gopkg.in/macaroon-bakery.v2-unstable/bakery"
 )
@@ -17,8 +18,8 @@ import (
 var logger = loggo.GetLogger("macaroond")
 
 var (
-	netTypeFlag = flag.String("t", "unix", "type of network to listen on (e.g. tcp)")
-	addrFlag    = flag.String("addr", "/tmp/macaroond.socket", "address or socket path to listen on")
+	netTypeFlag = flag.String("t", params.DefaultNetwork, "type of network to listen on (e.g. tcp)")
+	addrFlag    = flag.String("addr", params.DefaultAddress, "address or socket path to listen on")
 )
 
 func main() {
@@ -44,9 +45,16 @@ func main1(netw string, addr string, dir string) error {
 	}
 	listener, err := net.Listen(netw, addr)
 	if err != nil {
-		// TODO remove unix socket if it exists and try again
-		return errgo.Notef(err, "cannot listen on network %q, addr %q", netw, addr)
+		if netw == "unix" {
+			// TODO only do this if the socket can't be connected to?
+			os.Remove(addr)
+			listener, err = net.Listen(netw, addr)
+		}
+		if err != nil {
+			return errgo.Notef(err, "cannot listen on network %q, addr %q", netw, addr)
+		}
 	}
+	log.Printf("successfully listened on %v!%v", netw, addr)
 	srv := &server{
 		dir: dir,
 		bakery: bakery.New(bakery.BakeryParams{

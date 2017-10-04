@@ -35,8 +35,8 @@ func (c *loginCommand) Info() *cmd.Info {
 }
 
 func (c *loginCommand) SetFlags(f *gnuflag.FlagSet) {
-	f.StringVar(&c.network, "t", "unix", "network to use to connect to server (unix, tcp or file)")
-	f.StringVar(&c.addr, "addr", "/tmp/macaroond.socket", "address or socket path to connect to, or file path for local")
+	f.StringVar(&c.network, "t", params.DefaultNetwork, "network to use to connect to server (unix, tcp or file)")
+	f.StringVar(&c.addr, "addr", params.DefaultAddress, "address or socket path to connect to, or file path for local")
 }
 
 func (c *loginCommand) Init(args []string) error {
@@ -53,7 +53,7 @@ func (c *loginCommand) Run(cmdCtx *cmd.Context) error {
 	if err == nil {
 		return errgo.Newf("unexpected success logging in with empty password")
 	}
-	var password string
+	var m *bakery.Macaroon
 	if errgo.Cause(err) == params.ErrInitialPasswordNeeded {
 		fmt.Fprintf(cmdCtx.Stdout, "Choose initial password for macaroon root keys\n")
 		pw1, err := readPassword(cmdCtx, "Password: ")
@@ -72,17 +72,19 @@ func (c *loginCommand) Run(cmdCtx *cmd.Context) error {
 		}); err != nil {
 			return errgo.Notef(err, "cannot set password")
 		}
-		password = pw1
+		m, err = client.Login(ctx, pw1)
+		if err != nil {
+			return errgo.Notef(err, "cannot log in with new password")
+		}
 	} else {
 		pw, err := readPassword(cmdCtx, "Password: ")
 		if err != nil {
 			return errgo.Mask(err)
 		}
-		password = pw
-	}
-	m, err := client.Login(ctx, password)
-	if err != nil {
-		return errgo.Notef(err, "cannot log in with new password")
+		m, err = client.Login(ctx, pw)
+		if err != nil {
+			return errgo.Notef(err, "cannot log in")
+		}
 	}
 	m.M().SetLocation(c.network + " " + c.addr)
 	tok, err := formatJSON.marshalUnbound(bakery.Slice{m})
