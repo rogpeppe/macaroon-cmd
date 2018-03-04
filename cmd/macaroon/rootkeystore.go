@@ -10,8 +10,8 @@ import (
 	"sync"
 
 	errgo "gopkg.in/errgo.v1"
-	"gopkg.in/macaroon-bakery.v2-unstable/bakery"
-	macaroon "gopkg.in/macaroon.v2-unstable"
+	"gopkg.in/macaroon-bakery.v2/bakery"
+	macaroon "gopkg.in/macaroon.v2"
 
 	"github.com/rogpeppe/macaroon-cmd/cmd/macaroond/macaroondclient"
 )

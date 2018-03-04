@@ -4,19 +4,16 @@ import (
 	"bytes"
 	"context"
 	"sync"
-	"time"
 
 	"github.com/juju/httprequest"
 	errgo "gopkg.in/errgo.v1"
-	"gopkg.in/macaroon-bakery.v2-unstable/bakery"
-	"gopkg.in/macaroon-bakery.v2-unstable/httpbakery"
+	"gopkg.in/macaroon-bakery.v2/bakery"
+	"gopkg.in/macaroon-bakery.v2/httpbakery"
 
 	"github.com/rogpeppe/macaroon-cmd/params"
 )
 
 var rootKeyId = []byte("0")
-
-const expiryDuration = 24 * time.Hour
 
 type handler struct {
 	srv     *server
@@ -85,7 +82,7 @@ func (h *handler) Access(p httprequest.Params, req *params.AccessRequest) (*para
 	if err := h.srv.checkPassword(req.Password); err != nil {
 		return nil, errgo.WithCausef(err, params.ErrUnauthorized, "")
 	}
-	m, err := h.srv.bakery.Oven.NewMacaroon(p.Context, httpbakery.RequestVersion(p.Request), time.Now().Add(expiryDuration), nil, accessOp)
+	m, err := h.srv.bakery.Oven.NewMacaroon(p.Context, httpbakery.RequestVersion(p.Request), nil, accessOp)
 	if err != nil {
 		return nil, errgo.Notef(err, "cannot make macaroon")
 	}

@@ -7,7 +7,8 @@ import (
 	"github.com/juju/cmd"
 	"github.com/juju/gnuflag"
 	errgo "gopkg.in/errgo.v1"
-	"gopkg.in/macaroon-bakery.v2-unstable/bakery"
+	"gopkg.in/macaroon-bakery.v2/bakery"
+	"gopkg.in/macaroon-bakery.v2/bakery/checkers"
 )
 
 type newCommand struct {
@@ -24,13 +25,16 @@ func (c *newCommand) Info() *cmd.Info {
 		Name:    "new",
 		Args:    "operation ...",
 		Purpose: "Create a new macaroon and print it",
-		Doc:     `doc TODO`,
+		Doc: `
+The new command mints a new macaroon and prints it to stdout.
+
+`[1:],
 	}
 }
 
 func (c *newCommand) SetFlags(f *gnuflag.FlagSet) {
 	// TODO allow specification of root key and id?
-	f.DurationVar(&c.expiry, "expiry", time.Hour, "expiry time of macaroon as a duration")
+	f.DurationVar(&c.expiry, "expiry", 0, "expiry time of macaroon as a duration (default unlimited)")
 }
 
 func (c *newCommand) IsSuperCommand() bool {
@@ -59,9 +63,15 @@ func (c *newCommand) Run(cmdCtx *cmd.Context) error {
 		return errgo.Mask(err)
 	}
 	ctx := context.Background()
-	m, err := oven.NewMacaroon(ctx, bakery.Version3, time.Now().Add(c.expiry).Round(time.Millisecond), nil, c.ops...)
+	m, err := oven.NewMacaroon(ctx, bakery.Version3, nil, c.ops...)
 	if err != nil {
 		return errgo.Mask(err)
+	}
+	if c.expiry != 0 {
+		err := m.AddCaveat(ctx, checkers.TimeBeforeCaveat(time.Now().Add(c.expiry).Round(time.Millisecond)), nil, nil)
+		if err != nil {
+			return errgo.Mask(err)
+		}
 	}
 	data, err := formatJSON.marshalUnbound(bakery.Slice{m})
 	if err != nil {

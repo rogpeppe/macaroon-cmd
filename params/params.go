@@ -2,7 +2,7 @@ package params
 
 import (
 	"github.com/juju/httprequest"
-	"gopkg.in/macaroon-bakery.v2-unstable/bakery"
+	"gopkg.in/macaroon-bakery.v2/bakery"
 )
 
 const (

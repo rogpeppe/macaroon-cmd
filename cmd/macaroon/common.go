@@ -10,9 +10,9 @@ import (
 	"github.com/juju/cmd"
 	"github.com/juju/loggo"
 	errgo "gopkg.in/errgo.v1"
-	"gopkg.in/macaroon-bakery.v2-unstable/bakery"
-	"gopkg.in/macaroon-bakery.v2-unstable/httpbakery"
-	"gopkg.in/macaroon.v2-unstable"
+	"gopkg.in/macaroon-bakery.v2/bakery"
+	"gopkg.in/macaroon-bakery.v2/httpbakery"
+	"gopkg.in/macaroon.v2"
 )
 
 var logger = loggo.GetLogger("macaroon-cmd")

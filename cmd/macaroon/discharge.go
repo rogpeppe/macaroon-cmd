@@ -7,8 +7,8 @@ import (
 	"github.com/juju/gnuflag"
 	"github.com/juju/persistent-cookiejar"
 	errgo "gopkg.in/errgo.v1"
-	"gopkg.in/macaroon-bakery.v2-unstable/bakery"
-	"gopkg.in/macaroon-bakery.v2-unstable/httpbakery"
+	"gopkg.in/macaroon-bakery.v2/bakery"
+	"gopkg.in/macaroon-bakery.v2/httpbakery"
 )
 
 type dischargeCommand struct {

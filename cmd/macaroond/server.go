@@ -12,8 +12,8 @@ import (
 
 	"github.com/juju/httprequest"
 	errgo "gopkg.in/errgo.v1"
-	"gopkg.in/macaroon-bakery.v2-unstable/bakery"
-	macaroon "gopkg.in/macaroon.v2-unstable"
+	"gopkg.in/macaroon-bakery.v2/bakery"
+	macaroon "gopkg.in/macaroon.v2"
 )
 
 var serverParams = httprequest.Server{

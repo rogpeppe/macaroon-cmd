@@ -8,9 +8,9 @@ import (
 	"github.com/juju/cmd"
 	"github.com/juju/gnuflag"
 	errgo "gopkg.in/errgo.v1"
-	"gopkg.in/macaroon-bakery.v2-unstable/bakery"
-	"gopkg.in/macaroon-bakery.v2-unstable/bakery/checkers"
-	macaroon "gopkg.in/macaroon.v2-unstable"
+	"gopkg.in/macaroon-bakery.v2/bakery"
+	"gopkg.in/macaroon-bakery.v2/bakery/checkers"
+	macaroon "gopkg.in/macaroon.v2"
 )
 
 type checkCommand struct {
@@ -80,8 +80,8 @@ func (c *checkCommand) Run(cmdCtx *cmd.Context) error {
 		return errgo.Mask(err)
 	}
 	checker := bakery.NewChecker(bakery.CheckerParams{
-		MacaroonOpStore: oven,
-		Checker:         fpChecker,
+		MacaroonVerifier: oven,
+		Checker:          fpChecker,
 	}).Auth(mss...)
 	if checker.FirstPartyCaveatChecker != fpChecker {
 		panic(errgo.Newf("unexpected checker %T", checker.FirstPartyCaveatChecker))

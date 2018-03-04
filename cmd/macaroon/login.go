@@ -14,7 +14,7 @@ import (
 	"github.com/rogpeppe/macaroon-cmd/params"
 	"golang.org/x/crypto/ssh/terminal"
 	errgo "gopkg.in/errgo.v1"
-	"gopkg.in/macaroon-bakery.v2-unstable/bakery"
+	"gopkg.in/macaroon-bakery.v2/bakery"
 )
 
 type loginCommand struct {
